@@ -9,9 +9,17 @@ class ShellEmulator:
         self.user_name = user_name
         self.host_name = host_name
         self.current_dir = 'vfs/'  # Start in the vfs directory
-        # Open the tar file and store it as an attribute
-        self.tar = tarfile.open(vfs_path, "r")
+ # Check if vfs_path_or_obj is a path or file-like object (BytesIO)
+        if isinstance(vfs_path, (str, bytes, os.PathLike)):
+            # Open as a file path
+            self.tar = tarfile.open(vfs_path, "r")
+        else:
+            # Open as an in-memory file (BytesIO)
+            self.tar = tarfile.open(fileobj=vfs_path, mode="r")
+
+        # Load the virtual file system
         self.file_system = self.load_vfs()
+
 
     def load_vfs(self):
         """Load virtual file system from the tar archive."""
@@ -52,9 +60,15 @@ class ShellEmulator:
 
         for name in self.file_system:
             if name.startswith(self.current_dir) and name != self.current_dir:
+                # Strip current_dir from name
                 relative_path = name[len(self.current_dir):].strip('/')
+                
+                # Only show immediate files/directories in current_dir (no subdirectories)
                 if '/' not in relative_path:
-                    contents.append(relative_path)
+                    if self.file_system[name].isdir():
+                        contents.append(relative_path + '/')
+                    else:
+                        contents.append(relative_path)
 
         return "\n".join(contents) if contents else "Empty directory"
 
@@ -146,7 +160,10 @@ class ShellEmulator:
 
     def exit_emulator(self):
         """Exit the shell emulator."""
-        root.quit()
+        if 'root' in globals():
+            root.quit()  # Only quit if GUI is running
+        else:
+            raise SystemExit()  # In tests, just raise SystemExit to simulate quitting
 
 class ShellGUI(tk.Frame):
     def __init__(self, emulator, master=None):
