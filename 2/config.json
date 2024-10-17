@@ -1,7 +1,0 @@
-{
-    "package": "curl",
-    "max_depth": 2,
-    "output_path": "./output.mermaid",
-    "visualization_program": "/usr/bin/mermaid",
-    "repository_url": "http://archive.ubuntu.com/ubuntu/"
-}
