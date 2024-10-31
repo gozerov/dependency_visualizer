@@ -8,32 +8,24 @@ class ShellEmulator:
     def __init__(self, user_name, host_name, vfs_path):
         self.user_name = user_name
         self.host_name = host_name
-        self.current_dir = 'vfs/'  # Start in the vfs directory
- # Check if vfs_path_or_obj is a path or file-like object (BytesIO)
+        self.current_dir = 'vfs/' 
         if isinstance(vfs_path, (str, bytes, os.PathLike)):
-            # Open as a file path
             self.tar = tarfile.open(vfs_path, "r")
         else:
-            # Open as an in-memory file (BytesIO)
             self.tar = tarfile.open(fileobj=vfs_path, mode="r")
-
-        # Load the virtual file system
         self.file_system = self.load_vfs()
 
 
     def load_vfs(self):
-        """Load virtual file system from the tar archive."""
         fs = {}
         for member in self.tar.getmembers():
             fs[member.name] = member
         return fs
 
     def prompt(self):
-        """Return the shell prompt."""
         return f"{self.user_name}@{self.host_name}:{self.current_dir}$ "
 
     def execute_command(self, command):
-        """Parse and execute the entered shell command."""
         parts = command.strip().split()
         if not parts:
             return ""
@@ -53,7 +45,6 @@ class ShellEmulator:
             return f"Command not found: {cmd}"
 
     def ls(self):
-        """List directory contents."""
         contents = []
         if not self.current_dir.endswith('/'):
             self.current_dir += '/'
@@ -73,7 +64,6 @@ class ShellEmulator:
         return "\n".join(contents) if contents else "Empty directory"
 
     def cd(self, path):
-        """Change directory."""
         if path == '/':
             self.current_dir = 'vfs/'
         else:
@@ -93,17 +83,13 @@ class ShellEmulator:
         return ""
 
     def head(self, file_name):
-        """Display the first few lines of a file."""
-        # Ensure the file path is relative to the current directory
         if not self.current_dir.endswith('/'):
             self.current_dir += '/'
         full_path = self.current_dir + file_name
         
-        # Debugging: Show the full path being checked
         print(f"Full path: {full_path}")
         print(f"Available files: {list(self.file_system.keys())}")
         
-        # Check if the file exists in the virtual file system
         if full_path not in self.file_system:
             return f"No such file: {file_name}"
         
@@ -111,7 +97,6 @@ class ShellEmulator:
         if not member.isfile():
             return f"{file_name} is not a file."
         
-        # Extract the file contents
         f = self.tar.extractfile(member)
         if f is None:
             return f"Could not extract: {file_name}"
@@ -121,27 +106,21 @@ class ShellEmulator:
 
 
     def wc(self, file_name):
-        """Word count of the file."""
-        # Ensure the file path is relative to the current directory
         if not self.current_dir.endswith('/'):
             self.current_dir += '/'
         full_path = self.current_dir + file_name
         
-        # Debugging: Show the full path being checked
         print(f"Full path: {full_path}")
         print(f"Available files: {list(self.file_system.keys())}")
         
-        # Check if the file exists in the virtual file system
         if full_path not in self.file_system:
             return f"No such file: {file_name}"
         
         member = self.file_system[full_path]
         
-        # Check if the member is a file
         if not member.isfile():
             return f"{file_name} is not a file."
         
-        # Extract the file contents
         try:
             f = self.tar.extractfile(member)
             if f is None:
@@ -150,7 +129,6 @@ class ShellEmulator:
         except Exception as e:
             return f"Error extracting file: {e}"
         
-        # Perform word count, line count, and character count
         lines = len(content.splitlines())
         words = len(content.split())
         chars = len(content)
@@ -159,11 +137,10 @@ class ShellEmulator:
 
 
     def exit_emulator(self):
-        """Exit the shell emulator."""
         if 'root' in globals():
-            root.quit()  # Only quit if GUI is running
+            root.quit()  
         else:
-            raise SystemExit()  # In tests, just raise SystemExit to simulate quitting
+            raise SystemExit()  
 
 class ShellGUI(tk.Frame):
     def __init__(self, emulator, master=None):
@@ -173,7 +150,6 @@ class ShellGUI(tk.Frame):
         self.create_widgets()
 
     def create_widgets(self):
-        """Create the GUI layout."""
         self.output = scrolledtext.ScrolledText(self.master, wrap=tk.WORD)
         self.output.pack(fill=tk.BOTH, expand=True)
 
@@ -184,12 +160,10 @@ class ShellGUI(tk.Frame):
         self.display_output(self.emulator.prompt())
 
     def display_output(self, text):
-        """Display text in the output area."""
         self.output.insert(tk.END, text + "\n")
         self.output.see(tk.END)
 
     def run_command(self, event):
-        """Handle command execution."""
         command = self.command_entry.get()
         self.command_entry.delete(0, tk.END)
         self.display_output(command)
@@ -199,7 +173,6 @@ class ShellGUI(tk.Frame):
         self.display_output(self.emulator.prompt())
 
 def main():
-    """Entry point for the shell emulator."""
     if len(sys.argv) != 4:
         print("Usage: shell_emulator.py <username> <hostname> <path_to_tar>")
         sys.exit(1)
@@ -210,7 +183,6 @@ def main():
 
     emulator = ShellEmulator(user_name, host_name, vfs_path)
 
-    # Launch GUI
     global root
     root = tk.Tk()
     root.title("Shell Emulator")
