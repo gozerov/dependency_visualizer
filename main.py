@@ -51,10 +51,8 @@ class ShellEmulator:
 
         for name in self.file_system:
             if name.startswith(self.current_dir) and name != self.current_dir:
-                # Strip current_dir from name
                 relative_path = name[len(self.current_dir):].strip('/')
                 
-                # Only show immediate files/directories in current_dir (no subdirectories)
                 if '/' not in relative_path:
                     if self.file_system[name].isdir():
                         contents.append(relative_path + '/')
@@ -66,21 +64,23 @@ class ShellEmulator:
     def cd(self, path):
         if path == '/':
             self.current_dir = 'vfs/'
+        elif path == '..':
+            if self.current_dir != 'vfs/':
+                self.current_dir = '/'.join(self.current_dir.rstrip('/').split('/')[:-1]) + '/'
+                if self.current_dir == '':
+                    self.current_dir = 'vfs/'
         else:
-            # Ensure new path ends with '/'
             if not path.endswith('/'):
                 path += '/'
-            
-            # Construct the full path from the current directory
-            new_path = self.current_dir + path
-            
-            # Check if the new path exists and is a directory
+            new_path = os.path.normpath(self.current_dir + path).replace('\\', '/') + '/'
+
             if any(name.startswith(new_path) for name in self.file_system.keys()):
                 self.current_dir = new_path
             else:
                 return f"No such directory: {path.strip('/')}"
-        
+
         return ""
+
 
     def head(self, file_name):
         if not self.current_dir.endswith('/'):
